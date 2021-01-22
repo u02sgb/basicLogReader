@@ -1,0 +1,79 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: flask-logreader
+  namespace: capi
+  labels:
+    app: flask-logreader
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: flask-logreader
+  template:
+    metadata:
+      labels:
+        app: flask-logreader
+    spec:
+      imagePullSecrets:
+      - name: svcacct-compass-api
+      containers:
+      - name: 
+        image: flask_log:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5000
+        readinessProbe:
+          failureThreshold: 15
+          httpGet:
+            path: /
+            port: 5000
+            scheme: HTTP
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          successThreshold: 1
+          timeoutSeconds: 120
+        resources:
+          limits:
+            cpu: 200m
+          requests:
+            cpu: 200m
+        name: flask-logreader
+        env:
+        - name: K8S_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: k8s-token
+              key: k8s-token-value
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: flask-logreader-service
+  namespace: capi
+  labels:
+    app: flask-logreader-service
+spec:
+  selector:
+    app: flask-logreader
+  ports:
+    - protocol: TCP
+      port: 5000
+  type: ClusterIP
+---
+apiVersion: route.openshift.io/v1
+kind: Route
+metadata:
+  name: flask-logreader-route
+  namespace: capi
+spec:
+  host: capi-log.sdlocpapp.fisdev.local
+  path: /
+  tls:
+    insecureEdgeTerminationPolicy: Redirect
+    termination: edge
+  to:
+    kind: Service
+    name: flask-logreader-service
+    weight: 100
+  wildcardPolicy: None

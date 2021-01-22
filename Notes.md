@@ -27,3 +27,32 @@ for i in my_pods:
 History for Python3
 import readline; print('\n'.join([str(readline.get_history_item(i + 1)) for i in range(readline.get_current_history_length())]))
 
+ToDo
+build docker file
+
+docker build -t flask_log:latest
+k8s deploy
+service w htpasswd
+
+https://docs.openshift.com/container-platform/4.1/authentication/identity_providers/configuring-htpasswd-identity-provider.html
+htpasswd -c -B -b </path/to/users.htpasswd> <user_name> <password>
+
+oc create secret generic htpass-secret --from-file=htpasswd=</path/to/users.htpasswd> -n openshift-config
+
+apiVersion: config.openshift.io/v1
+kind: OAuth
+metadata:
+  name: cluster
+spec:
+  identityProviders:
+  - name: my_htpasswd_provider 
+    mappingMethod: claim 
+    type: HTPasswd
+    htpasswd:
+      fileData:
+        name: htpass-secret 
+
+https://kubernetes.github.io/ingress-nginx/examples/auth/basic/
+
+Plan?
+Setup a Route (as cert would be ok) add htpasswd to it
